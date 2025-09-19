@@ -2,4 +2,4 @@
 ยังไม่ลงรายละเอียดการสมัคร
 แต่สามารถลองไปกดรันดูก่อนได้
 
-![cat low energy](https://github.com/user-attachments/assets/2fb1127b-09ca-49b5-a6d1-57affbc71648)
+![no energy](https://github.com/user-attachments/assets/8b29163e-7648-46f1-8624-85fd060ade9f)
