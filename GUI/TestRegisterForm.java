@@ -7,6 +7,10 @@ package GUI;
  import javax.swing.JOptionPane;
 
 import Service.UserService;
+
+import Util.PasswordStrength;
+import Util.PasswordValidator;
+
 /**
  *
  * @author sasik
@@ -172,9 +176,15 @@ public class TestRegisterForm extends javax.swing.JFrame {
                 .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel5)
+
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPasswordField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPasswordField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+
                 .addComponent(jLabel6)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPasswordField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -225,13 +235,22 @@ public class TestRegisterForm extends javax.swing.JFrame {
         String password = new String(jPasswordField4.getPassword());
         String confirmpassword = new String(jPasswordField5.getPassword());
 
+        // ถ้า ทุกช่องเป็นช่องว่าง
         if (username.isEmpty() || password.isEmpty() || confirmpassword.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please complete the information!");
             return;
         }
+        // ถ้ารหัสผ่านไม่ตรงกับคอมเฟริม
         if (!password.equals(confirmpassword)) {
             JOptionPane.showMessageDialog(this, "Password and Confirm Password not correct!");
             return;
+        }
+        // ตรวจสอบรหัสผ่าน
+        PasswordStrength strength = PasswordValidator.validate(password);
+        if (strength == PasswordStrength.INVALID || strength == PasswordStrength.WEAK) {
+            JOptionPane.showMessageDialog(this, "Password >= 8 , Have Lower, Upper and Digit. " + strength);
+            return;
+            
         }
         if (userService != null) {
             userService.register(username, password);
@@ -239,8 +258,6 @@ public class TestRegisterForm extends javax.swing.JFrame {
             // เปลี่ยนหน้า
             dispose();
             new LoginForm(userService).setVisible(true);
-
-
             return;
         } 
         else{
