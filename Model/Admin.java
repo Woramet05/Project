@@ -14,6 +14,8 @@ public class Admin implements IUser {
      * สร้างออบเจ็กต์ Admin ใหม่
      * @param username ชื่อผู้ใช้
      * @param password รหัสผ่าน
+     * @param phonenumber เบอร์โทร
+     * @param email อีเมลล์
      */
     public Admin(String username, String password, String phonenumber, String email) {
         this.username = username;

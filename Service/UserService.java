@@ -3,13 +3,13 @@ package Service;
 import java.util.ArrayList;
 import java.util.List;
 
-import Model.IUser;
 import Model.User;
 import Model.Admin;
+import Model.IUser;
 import Util.FileHandler;
 
 /**
- * UserService ทกหน้าที่จัดการผู้ใช้ทั้งหมด
+ * UserService ทำหน้าที่จัดการผู้ใช้ทั้งหมด
  * เก็บ User
  * ตรวจสอบการ Login
  * ตรวจสอบการ Register
