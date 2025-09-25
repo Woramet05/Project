@@ -11,7 +11,7 @@ import java.util.List;
 import Model.User;
 
 /**
- * ที่จัดการ อ่าน/เขียนไฟล์ Users.txt
+ * ที่จัดการ อ่าน/เขียนไฟล์ เก็บไว้ใน Users.txt
  */
 public class FileHandler {
     private static final String File_Name = "Users.txt";
