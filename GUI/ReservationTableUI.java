@@ -2,6 +2,10 @@ package GUI;
 
 
 import javax.swing.*;
+
+import Model.Reservation;
+import Util.UserSession;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,6 +18,10 @@ public class ReservationTableUI extends JFrame {
     // เก็บ checkbox ที่สร้างในแต่ละชั้น
     private final Map<String, java.util.List<JCheckBox>> floorCheckBoxes = new HashMap<>();
     private final JPanel tablePanel = new JPanel();
+    
+    // เก็บทุก checkbox ที่ยังเลือกได้ (สีเขียว/enable)
+    private final java.util.List<JCheckBox> selectableBoxes = new java.util.ArrayList<>();
+
 
     // เก็บสถานะจริงของการจอง
     private final Map<String, Boolean> bookingStatus = new HashMap<>();
@@ -161,56 +169,104 @@ public class ReservationTableUI extends JFrame {
         Runnable updateTable = () -> {
             tablePanel.removeAll();
             floorCheckBoxes.clear();
+            selectableBoxes.clear(); // << สำคัญ : ล้างทุกครั้งก่อนสร้างใหม่
 
             String selected = (String) cmbFloor.getSelectedItem();
+            String selectedDate = (String) cmbDate.getSelectedItem();
+
+            // โหลดสถานะเฉพาะ "วันที่ที่เลือก" ก่อนวาด
+            reloadBookingStatus(selectedDate);
 
             if ("ทุกชั้น".equals(selected)) {
                 for (String floor : floorRooms.keySet()) {
-                    addFloorTable(tablePanel, floor, floorRooms.get(floor), times, true);
+                    addFloorTable(tablePanel, floor, floorRooms.get(floor), times, true, selectedDate);
                 }
             } else {
-                addFloorTable(tablePanel, selected, floorRooms.get(selected), times, false);
+                addFloorTable(tablePanel, selected, floorRooms.get(selected), times, false, selectedDate);
             }
 
             tablePanel.revalidate();
             tablePanel.repaint();
         };
 
+        cmbDate.addActionListener(e -> updateTable.run());
         cmbFloor.addActionListener(e -> updateTable.run());
         updateTable.run(); // โหลดครั้งแรก
 
         // ปุ่มรีเซ็ต → reset แค่ dropdown แต่ไม่รีข้อมูลจอง
-        btnReset.addActionListener(e -> cmbFloor.setSelectedItem("ทุกชั้น"));
+        btnReset.addActionListener(e -> {
+        cmbFloor.setSelectedItem("ทุกชั้น");
+        updateTable.run();
+        });
 
         // ปุ่มจอง
         btnReserve.addActionListener(e -> {
             boolean booked = false;
 
+            String selectedDate = (String) cmbDate.getSelectedItem();
+            String username;
+            if (UserSession.getCurrentUser() != null) {
+                username = UserSession.getCurrentUser().getUsername();
+            } else {
+                username = "UnknowUser";
+            }
+
+            // โหลดข้อมูลการจองทั้งหมดจากไฟล์
+            java.util.List<Reservation> allBookings = Util.FileHandler.loadBookings();
+
+            // นับจำนวนชั่วโมงที่ผู้ใช้นี้จองในวันเดียวกัน
+            int bookedCount = (int) allBookings.stream()
+                    .filter(r -> r.getUsername().equals(username) && r.getDate().equals(selectedDate))
+                    .count();
+
+            // ถ้ามากกว่า 2 แล้ว ห้ามจองเพิ่ม
+            if (bookedCount >= 2) {
+                JOptionPane.showMessageDialog(this,"คุณสามารถจองได้ไม่เกิน 2 ชั่วโมงต่อวัน!",
+                "แจ้งเตือน", JOptionPane.WARNING_MESSAGE);
+                return; // หยุดการทำงาน ไม่ให้จองต่อ
+            }
+
+            outer:
             for (String floor : floorCheckBoxes.keySet()) {
                 java.util.List<JCheckBox> list = floorCheckBoxes.get(floor);
                 String[] rooms = floorRooms.get(floor);
 
                 for (int i = 0; i < list.size(); i++) {
                     JCheckBox cb = list.get(i);
-                    int roomIndex = i / times.length;
-                    int timeIndex = i % times.length;
-
-                    String key = floor + "-" + rooms[roomIndex] + "-" + times[timeIndex];
-
                     if (cb.isSelected() && cb.isEnabled()) {
+
+                        // ตรวจซ้ำอีกครั้งก่อนบันทึก (กันพลาด)
+                        if (bookedCount >= 2) {
+                            JOptionPane.showMessageDialog(this,
+                                    "คุณจองครบ 2 ชั่วโมงแล้ว ไม่สามารถจองเพิ่มได้!",
+                                    "แจ้งเตือน", JOptionPane.WARNING_MESSAGE);
+                            break outer;
+                        
+                        }
+                        int roomIndex = i / times.length;
+                        int timeIndex = i % times.length;
+
+                        String room = rooms[roomIndex];
+                        String time = times[timeIndex];
+
+                        Util.FileHandler.saveBookings(new Reservation(room, selectedDate, time, username));
+
                         cb.setBackground(Color.RED);
                         cb.setEnabled(false);
-                        bookingStatus.put(key, true); // เก็บสถานะจริง
                         booked = true;
+
+                        allBookings.add(new Reservation(room, selectedDate, time, username)); // อัปเดตในลิสต์ทันที
+                        bookedCount++; // เพิ่มตัวนับทันที
+                        break outer; // single-select เจออันเดียวก็พอ ออกได้เลย
                     }
                 }
             }
-
             UIManager.put("OptionPane.messageFont", new Font("Tahoma", Font.PLAIN, 16));
 
             if (booked) {
                 JOptionPane.showMessageDialog(this, "ทำการจองเรียบร้อยแล้ว",
                         "สถานะ", JOptionPane.INFORMATION_MESSAGE);
+                updateTable.run();
             } else {
                 JOptionPane.showMessageDialog(this, "กรุณาเลือกห้องก่อนทำการจอง",
                         "แจ้งเตือน", JOptionPane.WARNING_MESSAGE);
@@ -253,8 +309,21 @@ public class ReservationTableUI extends JFrame {
         return p;
     }
 
+    // ====== โหลดสถานะการจองตามวันที่ที่เลือก ======
+    private void reloadBookingStatus(String selectedDate) {
+        bookingStatus.clear();
+        java.util.List<Reservation> all = Util.FileHandler.loadBookings();
+        for (Reservation reservation : all) {
+            if (selectedDate.equals(reservation.getDate())) {
+                // key แยกวันที่ + ห้อง + ช่วงเวลา
+                String key = reservation.getDate() + "#" + reservation.getRoom() + "#" + reservation.getTime();
+                bookingStatus.put(key, true);
+            }
+        }
+    }
+
     // ====== เพิ่มตารางของแต่ละชั้น ======
-    private void addFloorTable(JPanel tablePanel, String floorName, String[] rooms, String[] times, boolean limitTo3) {
+    private void addFloorTable(JPanel tablePanel, String floorName, String[] rooms, String[] times, boolean limitTo3, String selectedDate) {
         JLabel floorLabel = new JLabel(floorName);
         floorLabel.setFont(new Font("Tahoma", Font.BOLD, 18));
         floorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -279,7 +348,7 @@ public class ReservationTableUI extends JFrame {
             gridPanel.add(makeCell(r, Color.LIGHT_GRAY, true));
 
             for (String time : times) {
-                String key = floorName + "-" + r + "-" + time;
+                String key = selectedDate + "#" + r + "#" + time;
 
                 JCheckBox cb = new JCheckBox();
                 cb.setHorizontalAlignment(SwingConstants.CENTER);
@@ -290,6 +359,21 @@ public class ReservationTableUI extends JFrame {
                     cb.setEnabled(false);
                 } else {
                     cb.setBackground(Color.GREEN);
+                    cb.setEnabled(true);
+
+                    // เพิ่ม Checkbox ที่เลือกได้ลงในลิสต์รวม
+                    selectableBoxes.add(cb);
+
+                    // ให้เลือกได้ทีละช่องทั่วทั้งตาราง
+                    cb.addActionListener(ev -> {
+                        if (cb.isSelected()) {
+                            for(JCheckBox other : selectableBoxes){
+                                if (other != cb) {
+                                    other.setSelected(false);
+                                }
+                            }
+                        }
+                    });
                 }
 
                 gridPanel.add(cb);
@@ -302,6 +386,7 @@ public class ReservationTableUI extends JFrame {
         tablePanel.add(gridPanel);
         tablePanel.add(Box.createVerticalStrut(20));
     }
-
-    
+    public static void main(String[] args) {
+        new ReservationTableUI().setVisible(true);
+    } 
 }

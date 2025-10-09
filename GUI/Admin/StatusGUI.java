@@ -405,6 +405,6 @@ public class StatusGUI extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new StatusGUI().setVisible(true));
+        new StatusGUI().setVisible(true);
     }
 }

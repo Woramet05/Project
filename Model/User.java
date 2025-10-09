@@ -73,7 +73,7 @@ public class User implements IUser {
      * @param line ข้อความ 1 บรรทัดที่อ่านจากไฟล์ .txt
      * @return User ที่สร้างจากข้อมูล หรือ null ถ้าข้อมูลไม่ตรง (ไม่ครบ 4 ตัว)
      */
-    public static User FormFileString(String line){
+    public static User FromFileString(String line){
         String[] parts = line.split(", ");
         if (parts.length != 4) {
             return null;

@@ -174,6 +174,6 @@ centerPanel.add(scrollPane);
     return button;
 }
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(MyReservationGUI::new);
+        new MyReservationGUI().setVisible(true);
     }
 }
