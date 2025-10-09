@@ -1,7 +1,5 @@
 import GUI.LoginForm;
 import GUI.RoomS;
-import GUI.Admin.AdminHomeGUI;
-import GUI.Admin.HistoryGUI;
 import Service.UserService;
 
 public class App {

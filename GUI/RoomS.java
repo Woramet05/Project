@@ -117,7 +117,7 @@ public class RoomS extends javax.swing.JFrame {
         });
 
         jButton9.setBackground(new java.awt.Color(51, 102, 255));
-        jButton9.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jButton9.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
         jButton9.setForeground(new java.awt.Color(255, 255, 255));
         jButton9.setText("Room L");
         jButton9.addActionListener(new java.awt.event.ActionListener() {
@@ -127,7 +127,7 @@ public class RoomS extends javax.swing.JFrame {
         });
 
         jButton10.setBackground(new java.awt.Color(51, 102, 255));
-        jButton10.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jButton10.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
         jButton10.setForeground(new java.awt.Color(255, 255, 255));
         jButton10.setText("Room S");
 

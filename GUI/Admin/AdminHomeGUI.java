@@ -124,8 +124,9 @@ public class AdminHomeGUI extends JFrame {
 
         return card;
     }
-
-    // ฟังก์ชันสร้างการ์ดที่เป็นปุ่มกด
+    public static void main(String[] args) {
+        new AdminHomeGUI().setVisible(true);
+    }
 
    
 }

@@ -245,12 +245,12 @@ public class RoomL extends javax.swing.JFrame {
         });
 
         jButton25.setBackground(new java.awt.Color(51, 102, 255));
-        jButton25.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jButton25.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
         jButton25.setForeground(new java.awt.Color(255, 255, 255));
         jButton25.setText("Room L");
 
         jButton26.setBackground(new java.awt.Color(51, 102, 255));
-        jButton26.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jButton26.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
         jButton26.setForeground(new java.awt.Color(255, 255, 255));
         jButton26.setText("Room S");
         jButton26.addActionListener(new java.awt.event.ActionListener() {

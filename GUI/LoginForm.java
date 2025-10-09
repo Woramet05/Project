@@ -7,7 +7,9 @@ package GUI;
 import javax.swing.JOptionPane;
 
 import GUI.Admin.AdminHomeGUI;
+import Model.User;
 import Service.UserService;
+import Util.UserSession;
 
 /**
  *
@@ -224,6 +226,8 @@ public class LoginForm extends javax.swing.JFrame {
 
         if (userService.login(username, password)) {
             JOptionPane.showMessageDialog(this, "Login Success!");
+            User loggedUser = userService.getUserByUsername(username);
+            UserSession.setCurrentUser(loggedUser);
             dispose();
             new RoomS().setVisible(true);
         }

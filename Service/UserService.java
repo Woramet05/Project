@@ -60,4 +60,24 @@ public class UserService {
         }
         users.add(user);
     }
+
+     /**
+     * ดึงข้อมูล User ตามชื่อผู้ใช้
+     * ใช้ตอนล็อกอินสำเร็จเพื่อเก็บลง UserSession
+     *
+     * @param username ชื่อผู้ใช้
+     * @return User ถ้าพบ, null ถ้าไม่พบ
+     */
+    public User getUserByUsername(String username){
+        try {
+            for(User user : FileHandler.loadUsers()){
+            if (user.getUsername().equals(username)) {
+                return user;
+            }
+        }
+        } catch (Exception e) {
+            System.out.println("Error getUsreByUsername : " + e.getMessage());
+        }
+        return null;
+    }
 }
