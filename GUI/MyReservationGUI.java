@@ -1,179 +1,281 @@
 package GUI;
 
+import Model.Reservation;
+
+import Service.ReservationManager;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import Util.Action.CancelButtonColumn;
 
+/**
+ * MyReservationGUI
+ *
+ * หน้าจอ “การจองของฉัน” สำหรับผู้ใช้ทั่วไป:
+ * - แสดงเฉพาะรายการจองของผู้ใช้คนปัจจุบัน ตามวันที่ที่เลือก (วันนี้/พรุ่งนี้)
+ * - ซ่อนรายการที่เป็น "Available"
+ * - มีปุ่ม “ยกเลิก” สำหรับรายการที่สถานะเป็น "Reserved" เท่านั้น
+ * - สมัครเป็นผู้ฟัง ReservationManager เพื่อรีเฟรชหน้าจอเมื่อข้อมูลเปลี่ยน
+ */
+public class MyReservationGUI extends JFrame implements ReservationManager.ReservationListener {
 
-public class MyReservationGUI extends JFrame {
+    /** ตัวจัดการข้อมูลการจอง (ศูนย์กลางอ่าน/เขียนไฟล์) */
+    private final ReservationManager rm = ReservationManager.getInstance();
 
+    private JTable table;
+    private DefaultTableModel model;
+    private JComboBox<String> cbDate;
+    private final DateTimeFormatter DDMMYYYY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private final DateTimeFormatter HHMM     = DateTimeFormatter.ofPattern("HH:mm");
+
+    /**
+     * สร้างหน้าจอ “การจองของฉัน”
+     * - ตั้งค่าปุ่มสลับหน้า
+     * - สร้างตาราง + ปุ่ม "ยกเลิก" ในคอลัมน์สุดท้าย
+     * - สมัครเป็นผู้ฟังกับ ReservationManager
+     * - โหลดข้อมูลครั้งแรกตามวันที่ที่เลือก
+     */
     public MyReservationGUI() {
+
+        UIManager.put("OptionPane.messageFont", new FontUIResource("Tahoma", Font.PLAIN, 14));
+        UIManager.put("OptionPane.buttonFont",  new FontUIResource("Tahoma", Font.PLAIN, 13));
         setTitle("การจองของฉัน");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(950, 650);
+        setSize(900, 620);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-        // === พื้นหลังฟ้าอ่อน ===
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(new Color(230, 240, 255)); 
-        add(mainPanel);
+        // ===== Header buttons =====
+        JPanel topNav = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 14));
+        JButton bRooms = topButton("ห้อง");
+        JButton bSchedule = topButton("ตารางการจอง");
+        JButton bMine = topButton("การจองของฉัน");
+        topNav.add(bRooms); topNav.add(bSchedule); topNav.add(bMine);
+        add(topNav, BorderLayout.NORTH);
 
-        // === แถบเมนูด้านบน ===
-        JPanel topMenu = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
-        topMenu.setBackground(new Color(230, 240, 255));
+        bRooms.addActionListener(e -> { dispose(); new RoomS().setVisible(true); });
+        bSchedule.addActionListener(e -> { dispose(); new ReservationTableUI().setVisible(true); });
+        bMine.addActionListener(e -> JOptionPane.showMessageDialog(this, "คุณอยู่ที่หน้านี้แล้ว"));
 
-        JButton btnRoom = createMenuButton("ห้อง");
-        JButton btnSchedule = createMenuButton("ตารางการจอง");
-        JButton btnMyReservation = createMenuButton("การจองของฉัน");
+        // ===== Center =====
+        JPanel center = new JPanel(new BorderLayout());
+        center.setBackground(new Color(225, 235, 255));
+        add(center, BorderLayout.CENTER);
 
-        topMenu.add(btnRoom);
-        topMenu.add(btnSchedule);
-        topMenu.add(btnMyReservation);
+        JLabel title = new JLabel("การจองของฉัน", SwingConstants.CENTER);
+        title.setFont(new Font("Tahoma", Font.BOLD, 20));
+        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 8, 0));
+        center.add(title, BorderLayout.NORTH);
 
-        mainPanel.add(topMenu, BorderLayout.NORTH);
-
-        // ใส่ ActionListener ให้ปุ่ม Home
-btnSchedule.addActionListener((ActionListener) new ActionListener() {
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        // เปิดหน้า HomeGUI
-        ReservationTableUI reservationTableUI = new ReservationTableUI();
-        reservationTableUI.setVisible(true);
-
-        // ปิดหน้าปัจจุบัน (StatusGUI)
-        dispose();
-    }
-});
-        // ปุ่ม ห้อง
-btnRoom.addActionListener((ActionListener) new ActionListener() {
-    public void actionPerformed(ActionEvent e){
-        dispose();
-        new RoomS().setVisible(true);
-    }
-});
-
-        // === ส่วนกลาง ===
-        JPanel centerPanel = new JPanel();
-        centerPanel.setBackground(new Color(230, 240, 255));
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
-
-        // หัวข้อ
-        JLabel lblTitle = new JLabel("การจองของฉัน");
-        lblTitle.setFont(new Font("Tahoma", Font.BOLD, 22));
-        lblTitle.setForeground(Color.BLACK);
-        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        centerPanel.add(lblTitle);
-
-        centerPanel.add(Box.createVerticalStrut(15));
-
-        // === แถบเลือกวันที่ ===
-        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        datePanel.setBackground(new Color(230, 240, 255));
-
-        JLabel lblDate = new JLabel("วันที่จอง:");
-        lblDate.setFont(new Font("Tahoma", Font.PLAIN, 16));
-        lblDate.setForeground(Color.BLACK);
+        // Filter bar
+        JPanel filter = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        filter.setOpaque(false);
 
         LocalDate today = LocalDate.now();
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate tomorrow = today.plusDays(1);
+        cbDate = new JComboBox<>(new String[]{ today.format(DDMMYYYY), tomorrow.format(DDMMYYYY),"ทั้งหมด (วันนี้+พรุ่งนี้)" });
+        filter.add(new JLabel("วันที่จอง:"));
+        filter.add(cbDate);
 
-        String[] dates = {
-                today.minusDays(1).format(fmt),
-                today.format(fmt),
-                today.plusDays(1).format(fmt)
-        };
+        center.add(filter, BorderLayout.WEST);
 
-        JComboBox<String> cmbDate = new JComboBox<>(dates);
-        cmbDate.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        // Table
+        String[] cols = {"ห้อง", "วันที่จอง", "เวลา", "สถานะ", "การดำเนินการ"};
+        model = new DefaultTableModel(cols, 0) { @Override public boolean isCellEditable(int r, int c) { return c==4; } };
+        table = new JTable(model);
+        styleTable(table);
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
-        datePanel.add(lblDate);
-        datePanel.add(cmbDate);
-        centerPanel.add(datePanel);
-        centerPanel.add(Box.createVerticalStrut(15));
+        // Button column (cancel)
+        new CancelButtonColumn(table, 4, this::canCancelRow, this::performCancel);
 
-// === ตาราง (ใส่แถวว่างไว้ก่อน) ===
-String[] columnNames = {"ห้อง", "วันที่จอง", "เวลา", "การดำเนินการ"};
+        // Events
+        cbDate.addActionListener(e -> reloadTable());
 
-// ข้อมูลเริ่มต้น (แถวว่าง 5 แถว)
-Object[][] data = {
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-    {"", "", "", ""},
-   
-};
+        // Subscribe to reservation events
+        rm.addListener(this);
 
-DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+        // First load
+        reloadTable();
+    }
+
+    /**
+     * สร้างปุ่มหัวหน้า (ปุ่มนำทางบนแถบด้านบน)
+     * @param text ข้อความบนปุ่ม
+     * @return ปุ่มที่ตั้งสี/ขนาด/ฟอนต์เรียบร้อยแล้ว
+     */
+    private JButton topButton(String text) {
+        JButton b = new JButton(text);
+        b.setBackground(new Color(51,102,255));
+        b.setForeground(Color.WHITE);
+        b.setFont(new Font("Tahoma", Font.BOLD, 16));
+        b.setFocusPainted(false);
+        b.setPreferredSize(new Dimension(180, 40));
+        return b;
+    }
+
+    /**
+     * จัดสไตล์ตาราง: ความสูงแถว, ฟอนต์, เส้นตาราง และสีแถวตามสถานะ
+     * @param t ตารางที่ต้องการตั้งค่ารูปแบบ
+     */
+    private void styleTable(JTable t) {
+        t.setRowHeight(36);
+        t.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        t.getTableHeader().setFont(new Font("Tahoma", Font.BOLD, 14));
+        t.setGridColor(new Color(220,220,220));
+        t.setShowGrid(true);
+
+        t.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean selected, boolean focus, int row, int col) {
+                Component c = super.getTableCellRendererComponent(tbl, value, selected, focus, row, col);
+                if (!selected) {
+                    String status = String.valueOf(tbl.getValueAt(row, 3));
+                    if ("Reserved".equalsIgnoreCase(status)) {
+                        c.setBackground(new Color(255,230,230));
+                    } else if ("Closed".equalsIgnoreCase(status)) {
+                        c.setBackground(new Color(230,230,230));
+                    } else {
+                        c.setBackground(Color.WHITE);
+                    }
+                }
+                setHorizontalAlignment(col == 0 ? SwingConstants.CENTER : SwingConstants.CENTER);
+                return c;
+            }
+        });
+    }
+
+    /**
+     * โหลดข้อมูล “การจองของฉัน” สำหรับวันที่ที่เลือก
+     * - ดึงรายการจาก ReservationManager
+     * - แสดงเฉพาะของ username ปัจจุบัน และสถานะที่ไม่ใช่ "Available"
+     * - เติมลงตารางใหม่ทั้งหมด
+     */
+    private void reloadTable() {
+        String me;
+        try { me = Model.UserSession.getCurrentUsername(); }
+        catch (Exception ex) { me = null; }
+
+        model.setRowCount(0);
+        if (me == null || me.isBlank()) {
+            model.fireTableDataChanged();
+            return;
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate tomorrow = today.plusDays(1);
+
+        for (LocalDate d : new LocalDate[]{ today, tomorrow }){
+            for (Reservation r : rm.getByDate(d)) {
+                if (me.equals(r.getUsername())
+                    && r.getStatus() != null
+                    && !"Available".equalsIgnoreCase(r.getStatus())) {
+
+                        model.addRow(new Object[]{
+                            r.getRoom(),
+                            r.getDate().format(DDMMYYYY),
+                            r.getStart().format(HHMM) + "-" + r.getEnd().format(HHMM),
+                            r.getStatus(),
+                            "ยกเลิก" // ปุ่ม
+                    });
+                }
+            }
+        }
+        // (ทางเลือก) เรียงให้สวย: วันที่ > เวลา > ห้อง
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(model);
+        sorter.setComparator(1, (a,b) -> LocalDate.parse(a.toString(), DDMMYYYY)
+                .compareTo(LocalDate.parse(b.toString(), DDMMYYYY)));
+        sorter.setComparator(2, (a,b) -> a.toString().compareTo(b.toString()));
+        sorter.setSortKeys(java.util.List.of(
+            new RowSorter.SortKey(1, SortOrder.ASCENDING),
+            new RowSorter.SortKey(2, SortOrder.ASCENDING),
+            new RowSorter.SortKey(0, SortOrder.ASCENDING)
+        ));
+        table.setRowSorter(sorter);
+        
+        model.fireTableDataChanged();
+    }
+  
+    /* ===== ReservationManager listener ===== */
+
+    /**
+     * เมื่อมีการเพิ่มการจองใหม่จากแหล่งข้อมูล (เรียกอัตโนมัติ)
+     * ถ้าเป็นของฉันและตรงกับวันที่เลือกอยู่ จะรีโหลดตาราง
+     * @param r รายการจองที่ถูกเพิ่ม
+     */
+    @Override public void onReservationAdded(Reservation r) { SwingUtilities.invokeLater(this::reloadTable); }
+
+    /**
+     * เมื่อสถานะของรายการใดรายการหนึ่งถูกเปลี่ยน (เรียกอัตโนมัติ)
+     * ถ้าเป็นของฉันและตรงกับวันที่เลือกอยู่ จะรีโหลดตาราง
+     * @param r รายการที่ถูกเปลี่ยนสถานะ
+     */
+    @Override public void onReservationStatusChanged(Reservation r) { SwingUtilities.invokeLater(this::reloadTable); }
+
+    /**
+     * เมื่อข้อมูลทั้งหมดมีการเปลี่ยนแปลง (เรียกอัตโนมัติ)
+     * จะรีโหลดตารางใหม่ตามวันที่เลือก
+     * @param all รายการจองทั้งหมดล่าสุด
+     */
+    @Override public void onReservationChanged(List<Reservation> all) { SwingUtilities.invokeLater(this::reloadTable); }
+
+    /**
+     * ปิดหน้าจอและถอดตัวเองออกจากการเป็นผู้ฟัง ReservationManager
+     */
     @Override
-    public boolean isCellEditable(int row, int column) {
-        return false; // ไม่ให้แก้ไขช่อง
-    }
-};
-
-JTable table = new JTable(model);
-table.setRowHeight(35);
-table.setFont(new Font("Tahoma", Font.PLAIN, 14));
-table.getTableHeader().setFont(new Font("Tahoma", Font.BOLD, 15));
-
-// เส้นตารางดำเข้ม
-table.setShowGrid(true);
-table.setGridColor(Color.BLACK);
-
-JScrollPane scrollPane = new JScrollPane(table);
-scrollPane.getViewport().setBackground(new Color(245, 245, 245));
-
-
-
-// --- ตั้งค่า ---
-table.setRowHeight(30);
-table.setFont(new Font("Tahoma", Font.PLAIN, 14));
-table.setGridColor(Color.BLACK);
-
-// หัวตาราง
-table.getTableHeader().setFont(new Font("Tahoma", Font.BOLD, 15));
-table.getTableHeader().setBackground(new Color(220, 220, 220));
-table.getTableHeader().setReorderingAllowed(false);
-table.getTableHeader().setResizingAllowed(false);
-
-// ✅ เส้นด้านในบาง ๆ
-table.setShowGrid(true);
-table.setShowHorizontalLines(true);
-table.setShowVerticalLines(true);
-
-// ✅ กำหนดเส้นนอกหนา
-table.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.gray));
-
-
-
-centerPanel.add(scrollPane);
-        setVisible(true);
+    public void dispose() {
+        rm.removeListener(this);
+        super.dispose();
     }
 
-   private JButton createMenuButton(String text) {
-    JButton button = new JButton(text);
-    button.setFont(new Font("Tahoma", Font.BOLD, 15));
-    button.setBackground(new Color(51, 102, 255)); // ฟ้าน้ำเงิน
-    button.setForeground(Color.WHITE);             // ตัวอักษรสีขาว
-    button.setFocusPainted(false);
-    button.setPreferredSize(new Dimension(160, 40)); // ขนาดปุ่มกำหนดตายตัว
-    return button;
-}
-    public static void main(String[] args) {
-        new MyReservationGUI().setVisible(true);
+     /**
+     * ทำงานเมื่อกด "ยกเลิก" ของแถวนั้น:
+     * - ตรวจสอบว่าเป็นสถานะ Reserved เท่านั้นจึงยกเลิกได้
+     * - ยืนยันด้วย dialog
+     * - สั่ง ReservationManager.setStatus(..., "Available") เพื่อคืนสภาพช่อง
+     * @param row เลขแถวในตาราง
+     */
+    private void performCancel(int row) {
+        String room = (String) model.getValueAt(row, 0);
+        LocalDate date = LocalDate.parse((String) model.getValueAt(row, 1), DDMMYYYY);
+        String time = (String) model.getValueAt(row, 2); // "HH:mm-HH:mm"
+
+        String[] p = time.split("-");
+        if (p.length != 2) {
+            JOptionPane.showConfirmDialog(this, JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        java.time.LocalTime start = java.time.LocalTime.parse(p[0], HHMM);
+        java.time.LocalTime end   = java.time.LocalTime.parse(p[1], HHMM);
+
+        // อนุญาตยกเลิกเฉพาะสถานะ Reserved (ถ้าอยากยกเลิก Closed ด้วยให้ลบ if นี้)
+        String status = (String) model.getValueAt(row, 3);
+        if (!"Reserved".equalsIgnoreCase(status)) {
+            JOptionPane.showMessageDialog(this, "ยกเลิกได้เฉพาะรายการที่จองอยู่เท่านั้น", "แจ้งเตือน", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int ok = JOptionPane.showConfirmDialog(this,
+                "ยืนยันยกเลิกการจองห้อง " + room + " เวลา " + time + " ?",
+                "ยืนยัน", JOptionPane.YES_NO_OPTION);
+        if (ok == JOptionPane.YES_OPTION) {
+            ReservationManager.getInstance().setStatus(room, date, start, end, "Available");
+        }
+    }
+
+    /**
+     * เช็กว่าแถวนั้นสามารถกดยกเลิกได้หรือไม่
+     * @param row เลขแถว
+     * @return true ถ้าสถานะเป็น Reserved, false ถ้าไม่ใช่
+     */
+    private boolean canCancelRow(int row) {
+        if (row < 0) return false;
+        String status = String.valueOf(model.getValueAt(row, 3));
+        return "Reserved".equalsIgnoreCase(status);
     }
 }

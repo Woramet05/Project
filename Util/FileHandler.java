@@ -1,101 +1,79 @@
 package Util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import Model.Reservation;
+import Model.Admin;
 import Model.User;
+import Model.IUser;
 
 /**
- * ที่จัดการ อ่าน/เขียนไฟล์ เก็บไว้ใน Users.txt, Bookings.txt
+ * จัดการอ่าน/เขียนไฟล์ Users.txt
+ * ใช้เก็บข้อมูลผู้ใช้ทั้งหมด (ทั้ง Admin และ User)
  */
 public class FileHandler {
-    private static final String File_Name = "Users.txt";
 
+    private static final String FILE_NAME = "Users.txt";
 
     /**
-     * บันทึก User ใหม่ลงไฟล์ .txt
-     * @param user User ที่จะบันทึก
+     * บันทึกข้อมูลผู้ใช้ใหม่ลงไฟล์ (Append ต่อท้าย)
+     * @param user ผู้ใช้ที่ต้องการบันทึก (Admin หรือ User)
      */
-    public static void saveUsers(User user){
-        File file = new File(File_Name);
+    public static void saveUsers(IUser user) {
+        File file = new File(FILE_NAME);
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file,true))) {
-            writer.write(user.toFileString());
-            writer.newLine();
-            
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
+            // ใช้เมธอด toFileString() ของคลาสนั้นเอง
+            if (user instanceof Admin) {
+                writer.write(((Admin) user).toFileString());
+            } else if (user instanceof User) {
+                writer.write(((User) user).toFileString());
+            }
+            writer.newLine(); // ขึ้นบรรทัดใหม่
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println(" เกิดข้อผิดพลาดตอนบันทึกผู้ใช้: " + e);
         }
     }
 
-    public static List<User> loadUsers(){
-        List<User> users = new ArrayList<>();
-        File file = new File(File_Name);
+    /**
+     * โหลดข้อมูลผู้ใช้ทั้งหมดจากไฟล์ Users.txt
+     * @return รายชื่อผู้ใช้ทั้งหมดในไฟล์ (ทั้ง Admin และ User)
+     */
+    public static List<IUser> loadUsers() {
+        List<IUser> users = new ArrayList<>();
+        File file = new File(FILE_NAME);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))){
+        // ถ้าไฟล์ยังไม่ถูกสร้าง ให้คืนลิสต์ว่าง
+        if (!file.exists()) {
+            return users;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                User user = User.FromFileString(line);
-                if (user != null) {
-                    users.add(user);
+                // แยกข้อมูลออกจากบรรทัด
+                String[] parts = line.split(",");
+                if (parts.length < 5) continue;
+
+                String username = parts[0].trim();
+                String password = parts[1].trim();
+                String phone = parts[2].trim();
+                String email = parts[3].trim();
+                String role = parts[4].trim();
+
+                // ตรวจ role เพื่อสร้าง object ที่ถูกต้อง
+                if (role.equalsIgnoreCase("Admin")) {
+                    users.add(new Admin(username, password, phone, email, role));
+                } else {
+                    users.add(new User(username, password, phone, email, role));
                 }
             }
-
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println(" เกิดข้อผิดพลาดตอนโหลดผู้ใช้: " + e);
         }
+
         return users;
     }
-
-    // ------------------- Booking -------------------
-
-    private static final String Booking_Name = "Bookings.txt";
-
-    /**
-     * บันทึกข้อมูลการจองใหม่ลงไฟล์
-     * 
-     * @param reservation การจองที่จะบันท
-     */
-    public static void saveBookings(Reservation reservation){
-        File file = new File(Booking_Name);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file,true))) {
-            writer.write(reservation.toFileString());
-            writer.newLine();
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-    }
-
-    public static List<Reservation> loadBookings(){
-        List<Reservation> bookings = new ArrayList<>();
-        File file = new File(Booking_Name);
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))){
-            String line;
-            while ((line = reader.readLine()) != null) {
-                Reservation reservation = Reservation.fromFileString(line);
-                if (reservation != null) {
-                    bookings.add(reservation);
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
-        return bookings;
-    }
 }
+

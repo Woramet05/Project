@@ -1,6 +1,3 @@
-Username, Password, Phone number, Email
-
-owen, Owen12345, 0807915429, owen@gmail.com
-get123, Get12345, 0807915429, get@gmail.com
-boat, Boat12345, 0807915429, boat@ku.th
-pat123, Pat12345, 0807915429, pat@ku.th
+owen,Owen1234,0000000000,admin@system.com,Admin
+test1,Test1234,0000000000,test@gmail.com,User
+test2,Test1234,0000000000,test2@gmail.com,User

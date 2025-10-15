@@ -5,6 +5,7 @@
 package GUI;
 
 import GUI.Admin.AdminHomeGUI;
+import Model.UserSession;
 
 /**
  *
@@ -23,6 +24,15 @@ public class RoomL extends javax.swing.JFrame {
         setResizable(false);         // ไม่ให้ยืด/หด
                              // จัดขนาด JFrame ให้พอดีกับ Components ข้างใน
         setLocationRelativeTo(null); // จัด JFrame ให้อยู่กลางจอ
+        applyRoleVisibility();
+    }
+     private void applyRoleVisibility() {
+        // ถ้ายังไม่ได้ login หรือไม่ใช่ admin → ซ่อนปุ่ม
+        if (!UserSession.isAdmin()) {
+            jButton33.setVisible(false);
+        } else {
+            jButton33.setVisible(true);
+        }
     }
 
     /**
@@ -245,12 +255,12 @@ public class RoomL extends javax.swing.JFrame {
         });
 
         jButton25.setBackground(new java.awt.Color(51, 102, 255));
-        jButton25.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
+        jButton25.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jButton25.setForeground(new java.awt.Color(255, 255, 255));
         jButton25.setText("Room L");
 
         jButton26.setBackground(new java.awt.Color(51, 102, 255));
-        jButton26.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
+        jButton26.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jButton26.setForeground(new java.awt.Color(255, 255, 255));
         jButton26.setText("Room S");
         jButton26.addActionListener(new java.awt.event.ActionListener() {

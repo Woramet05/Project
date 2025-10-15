@@ -1,6 +1,7 @@
 package GUI;
 
 import GUI.Admin.AdminHomeGUI;
+import Model.UserSession;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -23,6 +24,17 @@ public class RoomS extends javax.swing.JFrame {
         setResizable(false);         // ไม่ให้ยืด/หด
                               // จัดขนาด JFrame ให้พอดีกับ Components ข้างใน
         setLocationRelativeTo(null); // จัด JFrame ให้อยู่กลางจอ
+
+        applyRoleVisibility();
+    }
+
+    private void applyRoleVisibility() {
+        // ถ้ายังไม่ได้ login หรือไม่ใช่ admin → ซ่อนปุ่ม
+        if (!UserSession.isAdmin()) {
+            jButton14.setVisible(false);
+        } else {
+            jButton14.setVisible(true);
+        }
     }
 
     /**
@@ -117,7 +129,7 @@ public class RoomS extends javax.swing.JFrame {
         });
 
         jButton9.setBackground(new java.awt.Color(51, 102, 255));
-        jButton9.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
+        jButton9.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
         jButton9.setForeground(new java.awt.Color(255, 255, 255));
         jButton9.setText("Room L");
         jButton9.addActionListener(new java.awt.event.ActionListener() {
@@ -127,7 +139,7 @@ public class RoomS extends javax.swing.JFrame {
         });
 
         jButton10.setBackground(new java.awt.Color(51, 102, 255));
-        jButton10.setFont(new java.awt.Font("Tahoma", 1, 17)); // NOI18N
+        jButton10.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jButton10.setForeground(new java.awt.Color(255, 255, 255));
         jButton10.setText("Room S");
 

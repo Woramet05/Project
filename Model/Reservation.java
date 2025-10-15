@@ -1,61 +1,33 @@
 package Model;
-/**
- * ใช้เก็บข้อมูลการจองห้องของผู้ใช้
- * โดยมีข้อมูล ห้อง, วันที่, เวลา, ชื่อผู้ใช้
- */
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.UUID;
+
 public class Reservation {
-    private String room;
-    private String date;
-    private String time;
+    private final String id = UUID.randomUUID().toString();
     private String username;
+    private String room;            // S01, L02 ฯลฯ
+    private LocalDate date;         // วันที่จอง
+    private LocalTime start;        // เวลาเริ่ม
+    private LocalTime end;          // เวลาสิ้นสุด
+    private String status;          // "Reserved", "Cancelled", "CheckedIn" ฯลฯ
 
-    /**
-     * สร้างอ็อบเจกต์ Reservation ใหม่
-     * @param room
-     * @param date
-     * @param time
-     * @param username
-     */
-
-    public Reservation(String room, String date, String time, String username){
+    public Reservation(String username, String room, LocalDate date, LocalTime start, LocalTime end, String status) {
+        this.username = username;
         this.room = room;
         this.date = date;
-        this.time = time;
-        this.username = username;
+        this.start = start;
+        this.end = end;
+        this.status = status;
     }
 
-    // ---------- Get / Set ----------
-
-    public String getRoom() { return room; }
-
-    public void setRoom(String room) { this.room = room; }
-
-    public String getDate() { return date; }
-
-    public void setDate(String date) { this.date = date; }
-
-    public String getTime() { return time; }
-
-    public void setTime(String time) { this.time = time; }
-
+    public String getId() { return id; }
     public String getUsername() { return username; }
-
-    public void setUsername(String username) { this.username = username; }
-
-    /**
-     * แปลง Reservation เป็นข้อความ 1 บรรทัด
-     * @return room, date, time, username
-     */
-    public String toFileString(){
-        return room + "|" + date + "|" + time + "|" + username;
-    }
-
-    public static Reservation fromFileString(String line){
-        String[] parts = line.split("\\|");
-        if (parts.length != 4) {
-            return null;
-        }
-
-        return new Reservation(parts[0], parts[1], parts[2], parts[3]);
-    }
+    public String getRoom() { return room; }
+    public LocalDate getDate() { return date; }
+    public LocalTime getStart() { return start; }
+    public LocalTime getEnd() { return end; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
