@@ -6,78 +6,110 @@ import java.util.List;
 import Model.User;
 import Model.Admin;
 import Model.IUser;
+import Model.UserSession;
 import Util.FileHandler;
 
 /**
  * UserService ทำหน้าที่จัดการผู้ใช้ทั้งหมด
- * เก็บ User
- * ตรวจสอบการ Login
- * ตรวจสอบการ Register
+ * - ตรวจสอบการ Login
+ * - จัดการการ Register
+ * - โหลดข้อมูลผู้ใช้จากไฟล์
  */
 public class UserService {
-    private List<IUser> users = new ArrayList<>();
+
+    // รายชื่อผู้ใช้ทั้งหมดที่โหลดจากไฟล์ (เก็บในหน่วยความจำระหว่างรัน)
+    private final List<IUser> users = new ArrayList<>();
 
     /**
-     * สร้าง User และ Admin ตรงนี้ได้
+     * Constructor
+     * โหลดข้อมูลผู้ใช้จากไฟล์ Users.txt ทันทีตอนสร้าง
+     * และเพิ่ม Admin เริ่มต้นหากยังไม่มี
      */
     public UserService() {
-        users.add(new Admin(null, null, null, null)); // สร้าง Admin ตรงนี้ก่อน
+        try {
+            // โหลดจากไฟล์ (สมมติ FileHandler.loadUsers() ส่งกลับ List<User>)
+            users.addAll(FileHandler.loadUsers());
+
+            // ถ้ายังไม่มี admin ในระบบ ให้สร้าง admin เริ่มต้น
+            boolean hasAdmin = users.stream().anyMatch(u -> "Admin".equalsIgnoreCase(u.getRole()));
+            if (!hasAdmin) {
+                Admin defaultAdmin = new Admin("owen", "Owen1234", "0000000000", "admin@system.com");
+
+                FileHandler.saveUsers(defaultAdmin);
+
+                users.add(defaultAdmin);
+            }
+        } catch (Exception e) {
+            System.out.println("โหลดผู้ใช้ล้มเหลว: " + e);
+        }
     }
 
     /**
-     * ตรวจสอบการ login
+     * ตรวจสอบการ Login
      * @param username ชื่อผู้ใช้
      * @param password รหัสผ่าน
-     * @return true ถ้า username และ password ตรงกับ users ที่เก็บไว้, อื่นๆ false
+     * @return true ถ้าข้อมูลถูกต้อง
      */
     public boolean login(String username, String password) {
         try {
-            for (IUser user : FileHandler.loadUsers()) {
-            if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
-                return true;
+            for (IUser user : users) { 
+                if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
+
+                    // เก็บทั้ง username + role ไว้ใน session
+                    UserSession.login(user.getUsername(), user.getRole());
+
+                    System.out.println("เข้าสู่ระบบสำเร็จ: " + username + " (" + user.getRole() + ")");
+                    return true;
+                }
             }
-        }
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println("เกิดข้อผิดพลาดตอน login: " + e);
         }
         return false;
     }
 
     /**
-     * การ register (เพิ่ม user เข้าไปใน List)
-     * และบันทึก user ลงไฟล์ .txt ตอน Register
-     * @param username ชื่อผู้ใช้
-     * @param password รหัสผ่าน
-     * @param email อีเมลล์
-     * @param phonenumber เบอร์โทร
+     * การ Register (สมัครสมาชิกใหม่)
+     * - เพิ่ม User ใหม่ลงไฟล์
+     * - Role จะเป็น "User" โดยอัตโนมัติ
      */
-    public void register(String username, String password, String phonenumber, String email ) {
-        User user = new User(username, password, phonenumber, email);
-        try {
-            FileHandler.saveUsers(user);
-        } catch (Exception e) {
-            System.out.println(e);
+    public boolean register(String username, String password, String phonenumber, String email) {
+        if (isUsernameTaken(username)) {
+            System.out.println("ชื่อผู้ใช้ถูกใช้แล้ว: " + username);
+            return false;
         }
-        users.add(user);
+
+        User user = new User(username, password, phonenumber, email); // Role = "User"
+        try {
+            FileHandler.saveUsers(user); // เขียนลงไฟล์
+            users.add(user);             // เก็บในหน่วยความจำ
+            System.out.println("สมัครสมาชิกสำเร็จ: " + username);
+            return true;
+        } catch (Exception e) {
+            System.out.println("เกิดข้อผิดพลาดตอน register: " + e);
+            return false;
+        }
     }
 
-     /**
-     * ดึงข้อมูล User ตามชื่อผู้ใช้
-     * ใช้ตอนล็อกอินสำเร็จเพื่อเก็บลง UserSession
-     *
-     * @param username ชื่อผู้ใช้
-     * @return User ถ้าพบ, null ถ้าไม่พบ
+    /**
+     * ค้นหาว่าชื่อถูกใช้ไปแล้วหรือยัง (กันซ้ำตอน Register)
      */
-    public User getUserByUsername(String username){
-        try {
-            for(User user : FileHandler.loadUsers()){
-            if (user.getUsername().equals(username)) {
-                return user;
-            }
-        }
-        } catch (Exception e) {
-            System.out.println("Error getUsreByUsername : " + e.getMessage());
-        }
-        return null;
+    public boolean isUsernameTaken(String username) {
+        return users.stream().anyMatch(u -> u.getUsername().equalsIgnoreCase(username));
+    }
+
+    /**
+     * คืนค่าผู้ใช้ทั้งหมด (ถ้าต้องการแสดงในตาราง)
+     */
+    public List<IUser> getAllUsers() {
+        return new ArrayList<>(users);
+    }
+
+    /**
+     * ออกจากระบบ (ล้าง session)
+     */
+    public void logout() {
+        UserSession.clearSession();
     }
 }
+
