@@ -7,6 +7,7 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 
 /**
+ * ปุ่มยกเลิกการจอง
  * ใส่ปุ่ม "ยกเลิก" ให้คอลัมน์ใน JTable แบบสำเร็จรูป (renderer + editor ในไฟล์เดียว)
  * ใช้เงื่อนไข enable ปุ่มผ่าน canCancel.applyAsBoolean(row) และ
  * เรียก onCancel.accept(row) เมื่อกดปุ่ม
@@ -96,3 +97,4 @@ public class CancelButtonColumn {
         }
     }
 }
+
